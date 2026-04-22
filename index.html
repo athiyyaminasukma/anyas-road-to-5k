@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Milo Run 5K — Training Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0A0F1E;
+    --surface: #111827;
+    --surface2: #1F2937;
+    --border: rgba(255,255,255,0.08);
+    --text: #F1F5F9;
+    --muted: #94A3B8;
+    --dim: #475569;
+    --c0: #3B82F6;
+    --c1: #F59E0B;
+    --c2: #F97316;
+    --c3: #EF4444;
+    --c4: #8B5CF6;
+    --c5: #10B981;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    background-image: radial-gradient(ellipse at 20% 20%, #1e3a5f33 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, #10b98111 0%, transparent 60%);
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #1E3A5F 0%, #0F2744 100%);
+    border-bottom: 1px solid rgba(59,130,246,0.25);
+    padding: 2rem 1.5rem 1.5rem;
+  }
+  .header-inner { max-width: 740px; margin: 0 auto; }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+  .header-eyebrow { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.2em; color: #60A5FA; text-transform: uppercase; margin-bottom: 0.4rem; }
+  .header-title { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--text); line-height: 1.1; }
+  .header-sub { font-size: 0.82rem; color: var(--muted); margin-top: 0.4rem; }
+  .overall-badge {
+    background: rgba(16,185,129,0.12);
+    border: 1px solid rgba(16,185,129,0.35);
+    border-radius: 14px;
+    padding: 0.75rem 1.25rem;
+    text-align: center;
+    min-width: 90px;
+  }
+  .overall-pct { font-family: 'DM Mono', monospace; font-size: 2rem; font-weight: bold; color: #10B981; line-height: 1; }
+  .overall-label { font-size: 0.65rem; color: #6EE7B7; margin-top: 0.2rem; }
+  .progress-wrap { margin-top: 1.25rem; }
+  .progress-meta { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); margin-bottom: 0.4rem; }
+  .progress-bar-bg { background: rgba(255,255,255,0.08); border-radius: 99px; height: 8px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #3B82F6, #10B981); transition: width 0.5s ease; }
+
+  /* MAIN */
+  .main { max-width: 740px; margin: 0 auto; padding: 1.5rem; }
+
+  /* WEIGHT CHART */
+  .card { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem; margin-bottom: 1.5rem; }
+  .card-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; margin-bottom: 1rem; }
+  .weight-bars { display: flex; justify-content: space-between; align-items: flex-end; gap: 0.5rem; }
+  .weight-col { flex: 1; text-align: center; }
+  .weight-val { font-family: 'DM Mono', monospace; font-size: 0.7rem; font-weight: bold; margin-bottom: 0.3rem; }
+  .weight-bar { border-radius: 6px 6px 0 0; min-height: 12px; border-width: 1px; border-style: solid; }
+  .weight-date { font-size: 0.6rem; color: var(--dim); margin-top: 0.3rem; }
+  .weight-name { font-size: 0.6rem; color: var(--muted); }
+
+  /* PHASE TABS */
+  .phase-tabs { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.5rem; margin-bottom: 1.25rem; scrollbar-width: none; }
+  .phase-tabs::-webkit-scrollbar { display: none; }
+  .phase-tab {
+    flex-shrink: 0;
+    padding: 0.45rem 0.85rem;
+    border-radius: 99px;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .phase-tab:hover { background: rgba(255,255,255,0.07); }
+  .phase-tab.active { font-weight: 700; }
+  .tab-badge {
+    background: rgba(255,255,255,0.1);
+    color: var(--dim);
+    border-radius: 99px;
+    padding: 0 0.4rem;
+    font-size: 0.62rem;
+    font-family: 'DM Mono', monospace;
+  }
+  .tab-badge.done { background: rgba(16,185,129,0.2); color: #10B981; }
+
+  /* PHASE DETAIL */
+  .phase-card { border-radius: 16px; padding: 1.25rem; margin-bottom: 1.25rem; border-width: 1px; border-style: solid; }
+  .phase-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; }
+  .phase-title-row { display: flex; align-items: center; gap: 0.6rem; }
+  .phase-emoji { font-size: 1.5rem; }
+  .phase-name { font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: var(--text); }
+  .phase-dates { font-size: 0.72rem; color: var(--muted); margin-top: 0.1rem; }
+  .phase-goal { font-size: 0.83rem; color: #CBD5E1; margin-top: 0.6rem; line-height: 1.4; }
+  .phase-count-box {
+    background: rgba(0,0,0,0.25);
+    border-radius: 12px;
+    padding: 0.6rem 1rem;
+    text-align: center;
+    min-width: 65px;
+  }
+  .phase-count { font-family: 'DM Mono', monospace; font-size: 1.4rem; font-weight: bold; line-height: 1; }
+  .phase-count-label { font-size: 0.62rem; color: var(--dim); }
+  .phase-prog-bg { background: rgba(255,255,255,0.08); border-radius: 99px; height: 5px; margin-top: 1rem; }
+  .phase-prog-fill { height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+  .targets { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; }
+  .target-tag {
+    font-size: 0.7rem; color: #CBD5E1;
+    background: rgba(255,255,255,0.05);
+    border-radius: 99px; padding: 0.25rem 0.7rem;
+    display: flex; align-items: center; gap: 0.3rem;
+    border-width: 1px; border-style: solid;
+  }
+
+  /* SESSIONS */
+  .sessions { display: flex; flex-direction: column; gap: 1rem; }
+  .week-card { background: rgba(255,255,255,0.025); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .week-header {
+    padding: 0.65rem 1rem;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .week-name { font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 500; color: var(--muted); letter-spacing: 0.04em; }
+  .week-count { font-size: 0.68rem; color: var(--dim); }
+  .sessions-list { padding: 0.5rem; }
+  .session-row {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-bottom: 2px;
+    user-select: none;
+  }
+  .session-row:last-child { margin-bottom: 0; }
+  .session-row:hover { background: rgba(255,255,255,0.05); }
+  .session-row.checked { }
+  .checkbox {
+    width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.18);
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    font-size: 0.75rem; color: #fff;
+  }
+  .day-label { min-width: 54px; font-size: 0.7rem; color: var(--dim); flex-shrink: 0; font-family: 'DM Mono', monospace; transition: color 0.2s; }
+  .activity-text { font-size: 0.82rem; color: #CBD5E1; line-height: 1.3; transition: all 0.2s; }
+  .session-row.checked .activity-text { text-decoration: line-through; color: var(--dim); }
+
+  /* CONFETTI */
+  .confetti-pop {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 3.5rem; pointer-events: none; z-index: 9999;
+    animation: popfade 0.8s ease-out forwards;
+  }
+  @keyframes popfade {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+    60% { transform: translate(-50%, -50%) scale(1.6); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+  }
+
+  /* MEDICAL NOTE */
+  .medical-note {
+    margin-top: 1.5rem;
+    background: rgba(239,68,68,0.07);
+    border: 1px solid rgba(239,68,68,0.22);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    display: flex; gap: 0.75rem; align-items: flex-start;
+  }
+  .medical-icon { font-size: 1.2rem; flex-shrink: 0; }
+  .medical-title { font-size: 0.76rem; font-weight: 700; color: #FCA5A5; margin-bottom: 0.25rem; }
+  .medical-body { font-size: 0.74rem; color: var(--muted); line-height: 1.5; }
+
+  .footer-note { text-align: center; margin-top: 1.5rem; font-size: 0.68rem; color: #1E293B; padding-bottom: 2rem; }
+
+  /* FADE IN */
+  .fade-in { animation: fadein 0.3s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div>
+        <div class="header-eyebrow">Training Dashboard</div>
+        <div class="header-title">Milo Run 5K 🏃</div>
+        <div class="header-sub">Start: 22 April 2026 &nbsp;→&nbsp; Race Day: ~15 September 2026</div>
+      </div>
+      <div class="overall-badge">
+        <div class="overall-pct" id="overallPct">0%</div>
+        <div class="overall-label">Overall</div>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span id="doneCount">0 sesi selesai</span>
+        <span id="totalCount">0 total sesi</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="overallBar" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Weight chart -->
+  <div class="card">
+    <div class="card-label">Target Berat Badan</div>
+    <div class="weight-bars" id="weightBars"></div>
+  </div>
+
+  <!-- Phase tabs -->
+  <div class="phase-tabs" id="phaseTabs"></div>
+
+  <!-- Phase detail -->
+  <div id="phaseDetail"></div>
+
+  <!-- Sessions -->
+  <div class="sessions" id="sessionsList"></div>
+
+  <!-- Medical note -->
+  <div class="medical-note">
+    <div class="medical-icon">🩺</div>
+    <div>
+      <div class="medical-title">Reminder Medis</div>
+      <div class="medical-body">Kalau engap nggak membaik atau makin parah saat latihan, segera konsultasi dokter. Progress yang baik = engap makin berkurang dari minggu ke minggu.</div>
+    </div>
+  </div>
+
+  <div class="footer-note">Progress disimpan otomatis · Klik sesi untuk tandai selesai</div>
+</div>
+
+<script>
+const PHASES = [
+  {
+    id:0, name:"Fase 0", subtitle:"Fondasi", emoji:"🔵", color:"#3B82F6",
+    weeks:"Minggu 1–3", dates:"22 Apr – 11 Mei",
+    goal:"Biasain tubuh bergerak rutin sebelum mulai lari",
+    target:["Jalan cepat 40 menit tanpa engap","Pola makan & tidur mulai diperbaiki","Turun ~1–2 kg"],
+    sessions:[
+      {week:"Minggu 1", days:[
+        {day:"Senin",activity:"Jalan cepat 30 menit",id:"w1d1"},
+        {day:"Rabu",activity:"Jalan cepat 35 menit",id:"w1d2"},
+        {day:"Jumat",activity:"Jalan cepat 40 menit",id:"w1d3"},
+        {day:"Sabtu",activity:"Stretching / jalan santai",id:"w1d4"},
+      ]},
+      {week:"Minggu 2", days:[
+        {day:"Senin",activity:"Jalan cepat 35 menit",id:"w2d1"},
+        {day:"Rabu",activity:"Jalan cepat 40 menit",id:"w2d2"},
+        {day:"Jumat",activity:"Jalan cepat 40 menit",id:"w2d3"},
+        {day:"Sabtu",activity:"Stretching ringan",id:"w2d4"},
+      ]},
+      {week:"Minggu 3", days:[
+        {day:"Senin",activity:"Jalan cepat 40 menit",id:"w3d1"},
+        {day:"Rabu",activity:"Jalan cepat 45 menit",id:"w3d2"},
+        {day:"Jumat",activity:"Jalan cepat 45 menit",id:"w3d3"},
+        {day:"Sabtu",activity:"Jalan santai + stretching",id:"w3d4"},
+      ]},
+    ]
+  },
+  {
+    id:1, name:"Fase 1", subtitle:"C25K Awal", emoji:"🟡", color:"#F59E0B",
+    weeks:"Minggu 4–7", dates:"12 Mei – 8 Jun",
+    goal:"Kenalkan tubuh ke lari dengan run-walk interval",
+    target:["Lari 5 menit non-stop","Engap mulai berkurang","Turun ~2–3 kg total"],
+    sessions:[
+      {week:"Minggu 4", days:[
+        {day:"Senin",activity:"🚶 Jalan 90dtk → 🏃 Lari 60dtk × 8",id:"w4d1"},
+        {day:"Rabu",activity:"🚶 Jalan 90dtk → 🏃 Lari 60dtk × 8",id:"w4d2"},
+        {day:"Jumat",activity:"🚶 Jalan 90dtk → 🏃 Lari 60dtk × 8",id:"w4d3"},
+      ]},
+      {week:"Minggu 5", days:[
+        {day:"Senin",activity:"🚶 Jalan 90dtk → 🏃 Lari 90dtk × 8",id:"w5d1"},
+        {day:"Rabu",activity:"🚶 Jalan 90dtk → 🏃 Lari 90dtk × 8",id:"w5d2"},
+        {day:"Jumat",activity:"🚶 Jalan 90dtk → 🏃 Lari 90dtk × 8",id:"w5d3"},
+      ]},
+      {week:"Minggu 6", days:[
+        {day:"Senin",activity:"🚶 Jalan 90dtk → 🏃 Lari 3 menit × 6",id:"w6d1"},
+        {day:"Rabu",activity:"🚶 Jalan 90dtk → 🏃 Lari 3 menit × 6",id:"w6d2"},
+        {day:"Jumat",activity:"🚶 Jalan 90dtk → 🏃 Lari 3 menit × 6",id:"w6d3"},
+      ]},
+      {week:"Minggu 7", days:[
+        {day:"Senin",activity:"🚶 Jalan 90dtk → 🏃 Lari 5 menit × 4",id:"w7d1"},
+        {day:"Rabu",activity:"🚶 Jalan 90dtk → 🏃 Lari 5 menit × 4",id:"w7d2"},
+        {day:"Jumat",activity:"🚶 Jalan 90dtk → 🏃 Lari 5 menit × 4",id:"w7d3"},
+      ]},
+    ]
+  },
+  {
+    id:2, name:"Fase 2", subtitle:"Bangun Stamina", emoji:"🟠", color:"#F97316",
+    weeks:"Minggu 8–11", dates:"9 Jun – 6 Jul",
+    goal:"Bangun stamina lari yang sesungguhnya",
+    target:["Lari 20 menit non-stop 🎉","Pace mulai konsisten","Turun ~4–5 kg total"],
+    sessions:[
+      {week:"Minggu 8", days:[
+        {day:"Senin",activity:"Lari 8 mnt → Jalan 5 mnt → Lari 8 mnt",id:"w8d1"},
+        {day:"Rabu",activity:"Lari 8 mnt → Jalan 5 mnt → Lari 8 mnt",id:"w8d2"},
+        {day:"Jumat",activity:"Lari 8 mnt → Jalan 5 mnt → Lari 8 mnt",id:"w8d3"},
+      ]},
+      {week:"Minggu 9", days:[
+        {day:"Senin",activity:"Lari 10 mnt → Jalan 3 mnt → Lari 10 mnt",id:"w9d1"},
+        {day:"Rabu",activity:"Lari 10 mnt → Jalan 3 mnt → Lari 10 mnt",id:"w9d2"},
+        {day:"Jumat",activity:"Lari 10 mnt → Jalan 3 mnt → Lari 10 mnt",id:"w9d3"},
+      ]},
+      {week:"Minggu 10", days:[
+        {day:"Senin",activity:"🔥 Lari 20 menit NON-STOP!",id:"w10d1"},
+        {day:"Rabu",activity:"🔥 Lari 20 menit NON-STOP!",id:"w10d2"},
+        {day:"Jumat",activity:"🔥 Lari 20 menit NON-STOP!",id:"w10d3"},
+      ]},
+      {week:"Minggu 11", days:[
+        {day:"Senin",activity:"Lari 22–25 menit non-stop",id:"w11d1"},
+        {day:"Rabu",activity:"Lari 22–25 menit non-stop",id:"w11d2"},
+        {day:"Jumat",activity:"Lari 22–25 menit non-stop",id:"w11d3"},
+      ]},
+    ]
+  },
+  {
+    id:3, name:"Fase 3", subtitle:"Build Up 5K", emoji:"🔴", color:"#EF4444",
+    weeks:"Minggu 12–16", dates:"7 Jul – 10 Agt",
+    goal:"Capai & nyaman di jarak 5K",
+    target:["Finish 5K pertama kamu! 🏆","Waktu 45–50 menit pun oke","Turun ~6–7 kg total"],
+    sessions:[
+      {week:"Minggu 12", days:[
+        {day:"Senin",activity:"Lari 25 menit",id:"w12d1"},
+        {day:"Rabu",activity:"Lari 25 menit",id:"w12d2"},
+        {day:"Jumat",activity:"Lari 25 menit",id:"w12d3"},
+      ]},
+      {week:"Minggu 13", days:[
+        {day:"Senin",activity:"Lari 28 menit",id:"w13d1"},
+        {day:"Rabu",activity:"Lari 28 menit",id:"w13d2"},
+        {day:"Jumat",activity:"Lari 28 menit",id:"w13d3"},
+      ]},
+      {week:"Minggu 14", days:[
+        {day:"Senin",activity:"⭐ LARI 5K PERTAMA! (boleh mix jalan)",id:"w14d1"},
+        {day:"Rabu",activity:"Lari 30 menit",id:"w14d2"},
+        {day:"Jumat",activity:"⭐ Lari 5K lagi!",id:"w14d3"},
+      ]},
+      {week:"Minggu 15", days:[
+        {day:"Senin",activity:"Lari 5K, coba perbaiki waktu",id:"w15d1"},
+        {day:"Rabu",activity:"Lari 30 menit",id:"w15d2"},
+        {day:"Jumat",activity:"Lari 5K",id:"w15d3"},
+      ]},
+      {week:"Minggu 16", days:[
+        {day:"Senin",activity:"Lari 5K konsisten",id:"w16d1"},
+        {day:"Rabu",activity:"Lari 5K konsisten",id:"w16d2"},
+        {day:"Jumat",activity:"Lari 5K — catat waktu terbaikmu!",id:"w16d3"},
+      ]},
+    ]
+  },
+  {
+    id:4, name:"Fase 4", subtitle:"Sharpening", emoji:"🟣", color:"#8B5CF6",
+    weeks:"Minggu 17–19", dates:"11 Agt – 31 Agt",
+    goal:"Perkuat mental & fisik, simulasi race day",
+    target:["Simulasi race day lengkap","Pakai sepatu & baju event","Badan & mental siap"],
+    sessions:[
+      {week:"Minggu 17", days:[
+        {day:"Senin",activity:"Lari 5K",id:"w17d1"},
+        {day:"Rabu",activity:"Interval ringan: 400m cepat × 4",id:"w17d2"},
+        {day:"Jumat",activity:"Lari 5K",id:"w17d3"},
+      ]},
+      {week:"Minggu 18", days:[
+        {day:"Senin",activity:"Lari 3K ringan",id:"w18d1"},
+        {day:"Rabu",activity:"🎽 SIMULASI RACE: Lari 5K pagi, full outfit!",id:"w18d2"},
+        {day:"Jumat",activity:"Lari 3K ringan",id:"w18d3"},
+      ]},
+      {week:"Minggu 19 — Tapering", days:[
+        {day:"Senin",activity:"Lari ringan 3K",id:"w19d1"},
+        {day:"Rabu",activity:"Jalan cepat + stretching",id:"w19d2"},
+        {day:"Jumat",activity:"Lari santai 2K — istirahat cukup",id:"w19d3"},
+      ]},
+    ]
+  },
+  {
+    id:5, name:"Race Week", subtitle:"🏁 Milo Run", emoji:"⚪", color:"#10B981",
+    weeks:"Minggu 20–21", dates:"1–15 Sep",
+    goal:"Jaga kondisi, jangan forsir",
+    target:["Tidur & makan teratur","H-1 istirahat total + karbo cukup","FINISH MILO RUN 5K! 🎉"],
+    sessions:[
+      {week:"Minggu 20", days:[
+        {day:"Senin",activity:"Lari ringan 2–3K",id:"w20d1"},
+        {day:"Rabu",activity:"Lari ringan 2–3K",id:"w20d2"},
+        {day:"Jumat",activity:"Istirahat total / jalan santai",id:"w20d3"},
+      ]},
+      {week:"Race Week 🏆", days:[
+        {day:"H-3",activity:"Lari ringan 2K",id:"rw1"},
+        {day:"H-2",activity:"Istirahat, makan karbo",id:"rw2"},
+        {day:"H-1",activity:"Istirahat TOTAL. Tidur cukup!",id:"rw3"},
+        {day:"RACE DAY",activity:"🏁 Mulai pelan, jaga napas, ENJOY THE RUN!",id:"rw4"},
+      ]},
+    ]
+  },
+];
+
+const WEIGHTS = [
+  {label:"Start",weight:100,date:"Apr",color:"#94A3B8"},
+  {label:"Fase 1",weight:98,date:"Mei",color:"#F59E0B"},
+  {label:"Fase 2",weight:96,date:"Jun",color:"#F97316"},
+  {label:"Fase 3",weight:94,date:"Jul-Agt",color:"#EF4444"},
+  {label:"Race",weight:92,date:"Sep",color:"#10B981"},
+];
+
+// State
+let checked = {};
+let activePhase = 0;
+
+try {
+  const saved = localStorage.getItem("milorun_v2");
+  if (saved) checked = JSON.parse(saved);
+} catch(e) {}
+
+function save() {
+  try { localStorage.setItem("milorun_v2", JSON.stringify(checked)); } catch(e) {}
+}
+
+function totalSessions() {
+  return PHASES.reduce((a,p) => a + p.sessions.reduce((b,s) => b + s.days.length, 0), 0);
+}
+function doneSessions() {
+  return Object.values(checked).filter(Boolean).length;
+}
+function phaseDone(p) {
+  return p.sessions.reduce((a,s) => a + s.days.filter(d => checked[d.id]).length, 0);
+}
+function phaseTotal(p) {
+  return p.sessions.reduce((a,s) => a + s.days.length, 0);
+}
+
+function renderWeightBars() {
+  const container = document.getElementById("weightBars");
+  container.innerHTML = WEIGHTS.map(w => {
+    const h = (105 - w.weight) * 7;
+    return `
+      <div class="weight-col">
+        <div class="weight-val" style="color:${w.color}">${w.weight} kg</div>
+        <div class="weight-bar" style="height:${h}px;background:linear-gradient(180deg,${w.color}88,${w.color}22);border-color:${w.color}44"></div>
+        <div class="weight-date">${w.date}</div>
+        <div class="weight-name">${w.label}</div>
+      </div>`;
+  }).join("");
+}
+
+function renderTabs() {
+  const container = document.getElementById("phaseTabs");
+  container.innerHTML = PHASES.map((p, i) => {
+    const done = phaseDone(p), total = phaseTotal(p);
+    const isActive = i === activePhase;
+    const allDone = done === total;
+    return `
+      <button class="phase-tab${isActive?" active":""}"
+        style="${isActive?`border-color:${p.color};color:${p.color};background:${p.color}18`:""}"
+        onclick="switchPhase(${i})">
+        <span>${p.emoji}</span>
+        <span>${p.name}</span>
+        <span class="tab-badge${allDone?" done":""}">${done}/${total}</span>
+      </button>`;
+  }).join("");
+}
+
+function renderPhaseDetail() {
+  const p = PHASES[activePhase];
+  const done = phaseDone(p), total = phaseTotal(p);
+  const pct = total > 0 ? Math.round((done/total)*100) : 0;
+  document.getElementById("phaseDetail").innerHTML = `
+    <div class="phase-card fade-in" style="background:${p.color}0e;border-color:${p.color}38">
+      <div class="phase-header">
+        <div>
+          <div class="phase-title-row">
+            <span class="phase-emoji">${p.emoji}</span>
+            <div>
+              <div class="phase-name">${p.name} — ${p.subtitle}</div>
+              <div class="phase-dates">${p.dates}</div>
+            </div>
+          </div>
+          <div class="phase-goal">${p.goal}</div>
+        </div>
+        <div class="phase-count-box">
+          <div class="phase-count" style="color:${p.color}">${done}/${total}</div>
+          <div class="phase-count-label">sesi</div>
+        </div>
+      </div>
+      <div class="phase-prog-bg">
+        <div class="phase-prog-fill" style="width:${pct}%;background:${p.color}"></div>
+      </div>
+      <div class="targets">
+        ${p.target.map(t => `
+          <div class="target-tag" style="border-color:${p.color}28">
+            <span style="color:${p.color}">→</span> ${t}
+          </div>`).join("")}
+      </div>
+    </div>`;
+}
+
+function renderSessions() {
+  const p = PHASES[activePhase];
+  const container = document.getElementById("sessionsList");
+  container.innerHTML = p.sessions.map(s => {
+    const wDone = s.days.filter(d => checked[d.id]).length;
+    return `
+      <div class="week-card fade-in">
+        <div class="week-header">
+          <span class="week-name">${s.week}</span>
+          <span class="week-count">${wDone}/${s.days.length} ✓</span>
+        </div>
+        <div class="sessions-list">
+          ${s.days.map(d => {
+            const done = !!checked[d.id];
+            return `
+              <div class="session-row${done?" checked":""}" onclick="toggleSession('${d.id}')"
+                style="${done?`background:${p.color}18`:""}"
+                onmouseenter="this.style.background='${done?p.color+"28":"rgba(255,255,255,0.05)"}'"
+                onmouseleave="this.style.background='${done?p.color+"18":"transparent"}'">
+                <div class="checkbox" style="${done?`border-color:${p.color};background:${p.color}`:""}">
+                  ${done?"✓":""}
+                </div>
+                <div class="day-label" style="${done?`color:${p.color}`:""}">${d.day}</div>
+                <div class="activity-text">${d.activity}</div>
+              </div>`;
+          }).join("")}
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function renderProgress() {
+  const total = totalSessions(), done = doneSessions();
+  const pct = total > 0 ? Math.round((done/total)*100) : 0;
+  document.getElementById("overallPct").textContent = pct + "%";
+  document.getElementById("overallBar").style.width = pct + "%";
+  document.getElementById("doneCount").textContent = done + " sesi selesai";
+  document.getElementById("totalCount").textContent = total + " total sesi";
+}
+
+function renderAll() {
+  renderProgress();
+  renderTabs();
+  renderPhaseDetail();
+  renderSessions();
+}
+
+function switchPhase(i) {
+  activePhase = i;
+  renderAll();
+  document.getElementById("phaseDetail").scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+
+function toggleSession(id) {
+  checked[id] = !checked[id];
+  save();
+  if (checked[id]) showConfetti();
+  renderAll();
+}
+
+function showConfetti() {
+  const el = document.createElement("div");
+  el.className = "confetti-pop";
+  el.textContent = "✅";
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+
+// Init
+renderWeightBars();
+renderAll();
+</script>
+</body>
+</html>
